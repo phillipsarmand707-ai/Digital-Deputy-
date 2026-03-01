@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Deputy - Town Feed</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+/* ===================== BODY ===================== */
+
+body {
+  margin:0;
+  font-family: 'Trebuchet MS', serif;
+  background: linear-gradient(to bottom, #fdf1d6, #e4c79f);
+  color:#3b2f2f;
+  text-align:center;
+}
+
+/* ===================== HEADER ===================== */
+
+header {
+  padding:20px;
+  font-size:2rem;
+  font-weight:bold;
+  background: linear-gradient(to right, #7a4e24, #5a3415);
+  color:white;
+  letter-spacing:1px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  border-bottom:4px solid #3b2f2f;
+}
+
+/* ===================== SECTIONS ===================== */
+
+section {
+  display:none;
+  padding:25px;
+  margin:30px auto;
+  width:90%;
+  max-width:800px;
+  background:#fff8e7;
+  border-radius:15px;
+  box-shadow:0 8px 25px rgba(0,0,0,0.25);
+  border:2px solid #8b5a2b;
+}
+
+.active {display:block;}
+
+h2 {
+  margin-bottom:15px;
+  font-size:1.5rem;
+  border-bottom:2px dashed #8b5a2b;
+  padding-bottom:8px;
+}
+
+/* ===================== MAP ===================== */
+
+#map {
+  height:420px;
+  width:100%;
+  border-radius:12px;
+  border:3px solid #8b5a2b;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+/* ===================== INPUTS ===================== */
+
+input, select, textarea {
+  width:85%;
+  padding:10px;
+  margin:10px 0;
+  border:2px solid #8b5a2b;
+  border-radius:8px;
+  background:#fffdf5;
+  font-size:1rem;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline:none;
+  border-color:#c02a0f;
+  box-shadow: 0 0 8px rgba(192,42,15,0.4);
+}
+
+/* ===================== BUTTON ===================== */
+
+button.main-btn {
+  padding:12px 22px;
+  border:none;
+  background: linear-gradient(145deg, #a52a2a, #7a1c1c);
+  color:white;
+  font-weight:bold;
+  border-radius:10px;
+  cursor:pointer;
+  transition: all 0.2s ease;
+  box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+
+button.main-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:0 6px 14px rgba(0,0,0,0.4);
+}
+
+/* ===================== FEED ===================== */
+
+.feed-item {
+  background:#fffdf5;
+  padding:15px;
+  margin:15px 0;
+  border-radius:12px;
+  text-align:left;
+  display:flex;
+  align-items:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.15);
+  border-left:6px solid #8b5a2b;
+  transition: transform 0.2s ease;
+}
+
+.feed-item:hover {
+  transform: scale(1.02);
+}
+
+.feed-item svg {
+  width:45px;
+  height:45px;
+  margin-right:15px;
+}
+
+.highlight {
+  background:#fff3d6;
+  border-left:6px solid #c02a0f;
+}
+
+/* ===================== GUN MENU ===================== */
+
+#gunMenu {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #4b2e1e, #2b1a10);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow:
+    0 10px 25px rgba(0,0,0,0.6),
+    inset 0 0 15px rgba(255,255,255,0.1);
+  transition: transform 0.5s;
+  position: relative;
+}
+
+#gunMenu::after {
+  content:"";
+  width:30px;
+  height:30px;
+  background: radial-gradient(circle, #bbb, #555);
+  border-radius:50%;
+  position:absolute;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.chamber {
+  position: absolute;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f5d76e, #b8860b);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:24px;
+  cursor:pointer;
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.5),
+    inset 0 -3px 6px rgba(0,0,0,0.4),
+    inset 0 3px 6px rgba(255,255,255,0.3);
+  transition: all 0.2s ease;
+}
+
+.chamber:hover {
+  transform: scale(1.1);
+}
+
+/* Triangle layout */
+.chamber:nth-child(1){ top: 8%; left: 50%; transform: translate(-50%, 0); }
+.chamber:nth-child(2){ bottom: 12%; left: 10%; }
+.chamber:nth-child(3){ bottom: 12%; right: 10%; }
+
+@keyframes dust {
+  0%{opacity:0;transform:scale(0);}
+  50%{opacity:0.3;transform:scale(1.2);}
+  100%{opacity:0;transform:scale(0);}
+}
+
+.dust {
+  position:absolute;
+  width:20px;
+  height:20px;
+  background:#c9a227;
+  border-radius:50%;
+  top:85px;
+  left:85px;
+  animation:dust 0.5s ease;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>🤠 Digital Deputy - Town Feed</header>
+
+<section id="mapSection" class="active">
+  <h2>Town Map</h2>
+  <div id="map"></div>
+</section>
+
+<section id="reportSection">
+  <h2>File a Report</h2>
+  <label>Deputy Name:</label>
+  <input id="username" placeholder="Enter your name" required>
+  <label>Report Type:</label>
+  <select id="type">
+    <option value="bandit">Bandit Thievery</option>
+    <option value="quiet">Quiet Territory</option>
+    <option value="fire">Campfire Blaze</option>
+    <option value="shootout">High Noon Shootout</option>
+    <option value="stab">Desert Assault</option>
+    <option value="kidnap">Horse Abduction</option>
+    <option value="riot">Saloon Riot</option>
+  </select>
+  <label>Description:</label>
+  <textarea id="desc" placeholder="Describe what happened..." rows="4"></textarea>
+  <br>
+  <button class="main-btn" onclick="submitReport()">Send to Sheriff</button>
+</section>
+
+<section id="feedSection">
+  <h2>Town Feed</h2>
+  <div id="feed"></div>
+</section>
+
+<div id="gunMenu">
+  <div class="chamber" onclick="rotateMenu(0)">🗺</div>
+  <div class="chamber" onclick="rotateMenu(1)">📝</div>
+  <div class="chamber" onclick="rotateMenu(2)">📜</div>
+</div>
+
+<script>
+
+/* ===== YOUR ORIGINAL JAVASCRIPT REMAINS EXACTLY THE SAME ===== */
+
+const icons = {
+bandit: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#000"/><rect x="16" y="28" width="32" height="10" fill="#fff"/></svg>`,
+quiet: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#c2b280"/><path d="M10 30h44" stroke="#fff" stroke-width="2"/></svg>`,
+fire: `<svg viewBox="0 0 64 64"><path d="M32 2C28 22 18 28 32 62C46 28 36 22 32 2Z" fill="orange"/></svg>`,
+shootout: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#a52a2a"/><rect x="28" y="20" width="8" height="24" fill="#fff"/></svg>`,
+stab: `<svg viewBox="0 0 64 64"><path d="M32 0 L36 28 L32 32 L28 28 Z" fill="#008000"/></svg>`,
+kidnap: `<svg viewBox="0 0 64 64"><rect x="24" y="24" width="16" height="16" fill="#8b4513"/><line x1="24" y1="24" x2="8" y2="8" stroke="#000" stroke-width="2"/></svg>`,
+riot: `<svg viewBox="0 0 64 64"><circle cx="20" cy="20" r="10" fill="red"/><circle cx="44" cy="44" r="10" fill="blue"/><line x1="20" y1="20" x2="44" y2="44" stroke="#000" stroke-width="2"/></svg>`
+};
+
+var map = L.map('map').setView([39.7392,-75.5398],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let currentLat=null;
+let currentLon=null;
+
+if(navigator.geolocation){
+navigator.geolocation.getCurrentPosition(pos=>{
+currentLat=pos.coords.latitude;
+currentLon=pos.coords.longitude;
+map.setView([currentLat,currentLon],14);
+L.circle([currentLat,currentLon],{
+radius:10,
+color:'blue',
+fillColor:'#3399ff',
+fillOpacity:0.5
+}).addTo(map);
+});
+}
+
+let reports=JSON.parse(localStorage.getItem("reports"))||[];
+renderReports();
+
+function submitReport(){
+let user=document.getElementById("username").value.trim();
+let type=document.getElementById("type").value;
+let desc=document.getElementById("desc").value.trim();
+if(!user){alert("Enter your name!");return;}
+if(!desc){alert("Add description!");return;}
+if(currentLat===null){alert("Location not ready!");return;}
+let report={user,type,desc,lat:currentLat,lon:currentLon,time:new Date().toLocaleString()};
+reports.push(report);
+localStorage.setItem("reports",JSON.stringify(reports));
+document.getElementById("desc").value="";
+renderReports();
+}
+
+function renderReports(){
+let feed=document.getElementById("feed");
+feed.innerHTML="";
+map.eachLayer(layer=>{
+if(layer instanceof L.Marker) map.removeLayer(layer)
+});
+let sorted=reports.slice().sort((a,b)=>new Date(b.time)-new Date(a.time));
+sorted.forEach(r=>{
+let highlight=(r.user===document.getElementById("username").value.trim())?"highlight":"";
+feed.innerHTML+=`<div class="feed-item ${highlight}">${icons[r.type]||''}<div><strong>${r.type}</strong> <em>by ${r.user}</em><br>${r.desc}<br><small>${r.time}</small></div></div>`;
+L.marker([r.lat,r.lon]).addTo(map).bindPopup(`<strong>${r.type}</strong><br>${r.desc}<br><em>Deputy: ${r.user}</em>`);
+});
+}
+
+window.addEventListener('storage',e=>{
+if(e.key==='reports'){
+reports=JSON.parse(localStorage.getItem("reports"))||[];
+renderReports();
+}
+});
+
+let rotation=0;
+function rotateMenu(index){
+rotation+=60;
+document.getElementById("gunMenu").style.transform="translateX(-50%) rotate("+rotation+"deg)";
+setTimeout(()=>{
+if(index===0)show("mapSection");
+if(index===1)show("reportSection");
+if(index===2)show("feedSection");
+},400);
+}
+
+function show(id){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
+
+</script>
+</body>
+</html>
